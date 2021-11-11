@@ -65,6 +65,21 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 	}
 
 	@Override
+	public List<User> getAll() {
+		return userRepository.findAll();
+	}
+
+	@Override
+	public User findByUsername(String username) {
+		return userRepository.findByUsername(username);
+	}
+
+	@Override
+	public User findByEmail(String email) {
+		return userRepository.findByEmail(email);
+	}
+	
+	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 		User user = userRepository.findByUsername(username);
 		if (user == null) {
@@ -79,21 +94,6 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 			log.info(FOUND_USER_BY_USERNAME + username);
 			return userPrincipal;
 		}
-	}
-
-	@Override
-	public List<User> getAll() {
-		return userRepository.findAll();
-	}
-
-	@Override
-	public User findByUsername(String username) {
-		return userRepository.findByUsername(username);
-	}
-
-	@Override
-	public User findByEmail(String email) {
-		return userRepository.findByEmail(email);
 	}
 	
 	@Override
@@ -238,8 +238,9 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     }
 	
 	private String getTemporaryProfileImageUrl(String username) {
-        return ServletUriComponentsBuilder.fromCurrentContextPath().path(DEFAULT_USER_IMAGE_PATH + username).toUriString();
-    }
+//        return ServletUriComponentsBuilder.fromCurrentContextPath().path(DEFAULT_USER_IMAGE_PATH + username).toUriString();
+		return null;
+	}
 	
 	private Role getRoleName(String role) {
 		return Role.valueOf(role.toUpperCase());

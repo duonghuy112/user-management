@@ -1,6 +1,8 @@
 package nguyenduonghuy.usermanagement.controller;
 
-import static nguyenduonghuy.usermanagement.constant.FileConstant.*;
+import static nguyenduonghuy.usermanagement.constant.FileConstant.FORWARD_SLASH;
+import static nguyenduonghuy.usermanagement.constant.FileConstant.TEMP_PROFILE_IMAGE_BASE_URL;
+import static nguyenduonghuy.usermanagement.constant.FileConstant.USER_FOLDER;
 import static nguyenduonghuy.usermanagement.constant.SecurityConstant.JWT_TOKEN_HEADER;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.IMAGE_JPEG_VALUE;
@@ -19,13 +21,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -61,18 +63,18 @@ public class UserController extends GlobalExceptionHandle {
 		this.jwtTokenProvider = jwtTokenProvider;
 	}
 	
+	@GetMapping
+    public ResponseEntity<List<User>> getAllUsers() {
+        List<User> users = userService.getAll();
+        return new ResponseEntity<>(users, OK);
+    }
+	
 	@GetMapping("/find/{username}")
     public ResponseEntity<User> getUser(@PathVariable("username") String username) {
         User user = userService.findByUsername(username);
         return new ResponseEntity<>(user, OK);
     }
 	
-	@GetMapping
-    public ResponseEntity<List<User>> getAllUsers() {
-        List<User> users = userService.getAll();
-        return new ResponseEntity<>(users, OK);
-    }
-
     @GetMapping("/reset-password/{email}")
     public ResponseEntity<HttpResponse> resetPassword(@PathVariable("email") String email) throws MessagingException, EmailNotFoundException {
         userService.resetPassword(email);
@@ -116,40 +118,30 @@ public class UserController extends GlobalExceptionHandle {
 	}
 	
 	@PostMapping("/add")
-	public ResponseEntity<User> addNewUser(@RequestParam("fullname") String fullname,
-			@RequestParam("username") String username,
-			@RequestParam("email") String email,
-			@RequestParam("role") String role,
-			@RequestParam("isNotLocked") String isNotLocked,
-			@RequestParam("isActive") String isActive,
+	public ResponseEntity<User> addNewUser(@RequestBody User user,
 			@RequestParam(value = "avatar", required = false) MultipartFile avatar) 
 					throws UserNotFoundException, UsernameExistException, EmailExistException, NotAnImageFileException, IOException, MessagingException {
-		User user = userService.addNew(fullname, username, email, role, Boolean.parseBoolean(isNotLocked), Boolean.parseBoolean(isActive), avatar);
-		return new ResponseEntity<>(user, HttpStatus.CREATED);
+		User newUser = userService.addNew(user.getFullname(), user.getUsername(), user.getEmail(), user.getRole(), user.isNotLocked(), user.isActive(), avatar);
+		return new ResponseEntity<>(newUser, HttpStatus.CREATED);
 	}
 	
-	@PostMapping("/update")
-	public ResponseEntity<User> updateUser(@RequestParam("id") String id,
-			@RequestParam("fullname") String fullname,
-			@RequestParam("username") String username,
-			@RequestParam("email") String email,
-			@RequestParam("role") String role,
-			@RequestParam("isNotLocked") String isNotLocked,
-			@RequestParam("isActive") String isActive,
+	@PutMapping("/update/{id}")
+	public ResponseEntity<User> updateUser(@PathVariable("id") String id, 
+			@RequestBody User user,
 			@RequestParam(value = "avatar", required = false) MultipartFile avatar) 
 					throws NumberFormatException, UserNotFoundException, UsernameExistException, EmailExistException, NotAnImageFileException, IOException {
-		User user = userService.update(Long.parseLong(id), fullname, username, email, role, Boolean.parseBoolean(isNotLocked), Boolean.parseBoolean(isActive), avatar);
-		return new ResponseEntity<>(user, HttpStatus.CREATED);
+		User updateUser = userService.update(Long.parseLong(id), user.getFullname(), user.getUsername(), user.getEmail(), user.getRole(), user.isNotLocked(), user.isActive(), avatar);
+		return new ResponseEntity<>(updateUser, HttpStatus.CREATED);
 	}
 	
-	@PostMapping("/updateAvatar")
-    public ResponseEntity<User> updateAvatar(@RequestParam("id") String id, @RequestParam(value = "avatar") MultipartFile avatar) throws UserNotFoundException, UsernameExistException, EmailExistException, IOException, NotAnImageFileException {
+	@PutMapping("/updateAvatar/{id}")
+    public ResponseEntity<User> updateAvatar(@PathVariable("id") String id, @RequestParam(value = "avatar") MultipartFile avatar) throws UserNotFoundException, UsernameExistException, EmailExistException, IOException, NotAnImageFileException {
         User user = userService.updateAvatar(Long.parseLong(id), avatar);
         return new ResponseEntity<>(user, OK);
     }
     
     @DeleteMapping("/delete/{id}")
-    @PreAuthorize("hasAnyAuthority('user:delete')")
+//    @PreAuthorize("hasAnyAuthority('user:delete')")
     public ResponseEntity<HttpResponse> deleteUser(@PathVariable("id") String id) throws IOException {
         userService.delete(Long.parseLong(id));
         HttpResponse response = new HttpResponse(OK.value(), OK, OK.getReasonPhrase(), USER_DELETED_SUCCESSFULLY);
